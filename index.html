@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOTD: High Valyrian Translator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Стили без изменений (см. предыдущие версии) */
+        :root {
+            --bg-color: #050505;
+            --card-bg: #121212;
+            --blood-red: #660000;
+            --fire-red: #cc0000;
+            --gold: #c5a059;
+            --gold-dark: #7a5e25;
+            --text: #e0e0e0;
+            --scale-color: #1a0505;
+        }
+
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 100% 150%, var(--scale-color) 24%, rgba(0,0,0,0) 25%),
+                radial-gradient(circle at 0% 150%, var(--scale-color) 24%, rgba(0,0,0,0) 25%),
+                radial-gradient(circle at 50% 100%, var(--scale-color) 50%, rgba(0,0,0,0) 51%),
+                radial-gradient(circle at 100% 50%, var(--scale-color) 24%, rgba(0,0,0,0) 25%),
+                radial-gradient(circle at 0% 50%, var(--scale-color) 24%, rgba(0,0,0,0) 25%),
+                radial-gradient(circle at 50% 0%, var(--scale-color) 50%, rgba(0,0,0,0) 51%);
+            background-size: 60px 60px;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 800px;
+            text-align: center;
+            position: relative;
+            background: rgba(10, 10, 10, 0.95);
+            padding: 2rem;
+            border: 2px solid var(--gold-dark);
+            border-radius: 4px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.9), inset 0 0 80px rgba(102, 0, 0, 0.1);
+        }
+
+        .dragon-sigil {
+            width: 100px;
+            height: 100px;
+            fill: var(--blood-red);
+            filter: drop-shadow(0 0 10px var(--fire-red));
+            margin-bottom: 1rem;
+            transition: transform 0.5s ease;
+        }
+        
+        .container:hover .dragon-sigil {
+            transform: scale(1.05);
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            color: var(--gold);
+            font-size: 2.5rem;
+            margin: 0 0 1.5rem 0;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            border-bottom: 1px solid var(--gold-dark);
+            padding-bottom: 1rem;
+        }
+
+        .mode-switch {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: 1px solid var(--gold-dark);
+            color: var(--gold-dark);
+            padding: 10px 20px;
+            font-family: 'Cinzel', serif;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .mode-btn.active, .mode-btn:hover {
+            background: var(--blood-red);
+            color: var(--gold);
+            border-color: var(--gold);
+            box-shadow: 0 0 15px rgba(204, 0, 0, 0.4);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Cinzel', serif;
+            color: var(--gold);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            padding: 0 1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--gold-dark);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .card::before, .card::after {
+            content: "✦";
+            position: absolute;
+            color: var(--gold);
+            font-size: 1.5rem;
+        }
+        .card::before { top: 10px; left: 10px; }
+        .card::after { bottom: 10px; right: 10px; }
+
+        .task-label {
+            display: block;
+            font-family: 'Cinzel', serif;
+            color: var(--fire-red);
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .original-word {
+            font-family: 'Cinzel', serif;
+            font-size: 2.2rem;
+            color: var(--gold);
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 0px rgba(0,0,0,1);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .translation-word {
+            font-size: 1.5rem;
+            color: var(--text);
+            font-style: italic;
+            opacity: 0.8;
+            margin-bottom: 1rem;
+        }
+
+        .feedback {
+            height: 1.5rem;
+            font-weight: bold;
+            font-family: 'Cinzel', serif;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+        }
+
+        .option-btn {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: var(--text);
+            padding: 1.2rem;
+            cursor: pointer;
+            font-family: 'Lato', sans-serif;
+            font-size: 1rem;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--gold);
+            color: var(--gold);
+            background: #252525;
+        }
+
+        .option-btn.correct {
+            background: #0f3d0f !important;
+            border-color: #2e7d32 !important;
+            color: #fff !important;
+        }
+
+        .option-btn.wrong {
+            background: #4a0f0f !important;
+            border-color: #c62828 !important;
+            color: #fff !important;
+        }
+
+        #next-btn {
+            width: 100%;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: linear-gradient(45deg, var(--gold-dark), var(--gold));
+            border: none;
+            color: #000;
+            font-family: 'Cinzel', serif;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: none;
+        }
+
+        #next-btn:hover {
+            filter: brightness(1.2);
+        }
+
+        .speak-btn {
+            background: none;
+            border: none;
+            color: var(--gold);
+            font-size: 2rem;
+            cursor: pointer;
+            transition: transform 0.2s, color 0.2s;
+            line-height: 1;
+            padding: 0;
+            margin-left: 0.5rem;
+        }
+        .speak-btn:hover {
+            transform: scale(1.2);
+            color: var(--fire-red);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <svg class="dragon-sigil" viewBox="0 0 512 512">
+        <path d="M136.8 56.4C118.4 51.5 101.4 43.1 87.2 30.2 73 43.1 56 51.5 37.6 56.4c-17.7 4.7-37.2 6.4-56.1 2.3 12.3 22.1 31.5 39.1 54.4 47.9 22.9 8.8 48.6 8.8 71.5 0 22.9-8.8 42.1-25.8 54.4-47.9-18.9 4.1-38.4 2.4-56.1-2.3zM368 32c-29.5 0-56.2 12-75.3 31.2C273.6 82.3 261.6 109 261.6 138.5c0 29.5 12 56.2 31.2 75.3 19.1 19.1 45.8 31.2 75.3 31.2s56.2-12 75.3-31.2c19.1-19.1 31.2-45.8 31.2-75.3 0-29.5-12-56.2-31.2-75.3C424.2 44 397.5 32 368 32zM427.2 277.6c-21.8-13.4-46.6-20.5-72.2-20.5-38 0-73.4 15.6-98.8 41-1.6 1.6-3.1 3.2-4.6 4.9-20.1-40.3-61.7-67.5-108.6-67.5-67.1 0-121.5 54.4-121.5 121.5 121.5 0 67.1 54.4 121.5 121.5 121.5 50.1 0 93.9-31.1 112.9-75.8 1.9 2.2 3.9 4.3 5.9 6.3 25.4 25.4 60.8 41 98.8 41 25.6 0 50.4-7.1 72.2-20.5 41.7-25.7 67.3-71 67.3-120.3S468.9 303.3 427.2 277.6z"/>
+    </svg>
+
+    <h1>House of the Dragon<br><span style="font-size: 1.2rem; color: var(--gold-dark)">Translation Trainer</span></h1>
+
+    <div class="mode-switch">
+        <button class="mode-btn active" onclick="setMode('transformation')">Способ перевода</button>
+        <button class="mode-btn" onclick="setMode('category')">Тип имени</button>
+    </div>
+
+    <div class="stats">
+        <span id="score">Счет: 0</span>
+        <span id="total">Всего: 0</span>
+    </div>
+
+    <div class="card">
+        <span id="task-label" class="task-label">Определите трансформацию</span>
+        <div id="original" class="original-word">...</div>
+        <div id="translation" class="translation-word">...</div>
+        <div id="feedback" class="feedback"></div>
+    </div>
+
+    <div id="options" class="options-grid"></div>
+
+    <button id="next-btn" onclick="nextQuestion()">Следующий вопрос</button>
+</div>
+
+<script>
+    // База данных (60 элементов, все уникальны)
+    const database = [
+        {orig: "Alys Rivers", trans: "Алис Риверс", type: "Transliteration", cat: "Anthroponyms"},
+        {orig: "Alicent Hightower", trans: "Алисента Хайтауэр", type: "Transference", cat: "Anthroponyms"},
+        {orig: "Alyssa Targaryen", trans: "Алисса Таргариен", type: "Transliteration", cat: "Anthroponyms"},
+        {orig: "Allun Caswell", trans: "Аллан Касвелл", type: "Transcription", cat: "Anthroponyms"},
+        {orig: "Alfred Broome", trans: "Альфред Брум", type: "Transcription", cat: "Anthroponyms"},
+        {orig: "Amos Bracken", trans: "Амос Бракен", type: "Transcription", cat: "Anthroponyms"},
+        {orig: "Arryk Cargyll", trans: "Аррик Каргилл", type: "Transliteration", cat: "Anthroponyms"},
+        {orig: "Beric Dondarrion", trans: "Берик Дондаррион", type: "Transliteration", cat: "Anthroponyms"},
+        {orig: "Boremund Baratheon", trans: "Боремунд Баратеон", type: "Transcription", cat: "Anthroponyms"},
+        {orig: "Brett Lannister", trans: "Бретт Ланнистер", type: "Transliteration", cat: "Anthroponyms"},
+        {orig: "Brynden Rivers", trans: "Бринден Риверс", type: "Transliteration", cat: "Anthroponyms"},
+        {orig: "Vaemond Velaryon", trans: "Веймонд Веларион", type: "Transference", cat: "Anthroponyms"},
+        {orig: "Viserys I Targaryen", trans: "Визерис I Таргариен", type: "Transference", cat: "Anthroponyms"},
+        {orig: "Visenya Targaryen", trans: "Висенья Таргариен", type: "Transference", cat: "Anthroponyms"},
+        {orig: "Maester Gerardys", trans: "Мейстер Герардис", type: "Transference", cat: "Anthroponyms"},
+        {orig: "Daemon Targaryen", trans: "Деймон Таргариен", type: "Transference", cat: "Anthroponyms"},
+        {orig: "Daeron Targaryen", trans: "Дейрон Таргариен", type: "Transference", cat: "Anthroponyms"},
+        {orig: "Desmond Caron", trans: "Десмонд Карон", type: "Transliteration", cat: "Anthroponyms"},
+        {orig: "Jerrel Bracken", trans: "Джеррел Бракен", type: "Transference", cat: "Anthroponyms"},
+        {orig: "Cassandra Baratheon", trans: "Касандра Баратеон", type: "Transcription", cat: "Anthroponyms"},
+        {orig: "Corlys Velaryon", trans: "Корлис Веларион", type: "Transliteration", cat: "Anthroponyms"},
+        {orig: "Cregan Stark", trans: "Криган Старк", type: "Transliteration", cat: "Anthroponyms"},
+        {orig: "Larys Strong", trans: "Ларис Стронг", type: "Transliteration", cat: "Anthroponyms"},
+        {orig: "Lorent Marbrand", trans: "Лорент Марбранд", type: "Transliteration", cat: "Anthroponyms"},
+        {orig: "Maris Baratheon", trans: "Марис Баратеон", type: "Transcription", cat: "Anthroponyms"},
+        {orig: "Sheepstealer", trans: "Овцекрад", type: "Calque", cat: "Anthroponyms"},
+        {orig: "Rhaena Targaryen", trans: "Рейна Таргариен", type: "Transference", cat: "Anthroponyms"},
+        {orig: "Rhaenyra Targaryen", trans: "Рейнира Таргариен", type: "Transference", cat: "Anthroponyms"},
+        {orig: "Rickon Stark", trans: "Рикон Старк", type: "Transference", cat: "Anthroponyms"},
+        {orig: "Harwin Strong", trans: "Харвин Стронг", type: "Transference", cat: "Anthroponyms"},
+        {orig: "Valyria", trans: "Валирия", type: "Transcription", cat: "Toponyms"},
+        {orig: "Eyrie", trans: "Орлиное Гнездо", type: "Modulation", cat: "Toponyms"},
+        {orig: "Winterfell", trans: "Винтерфелл", type: "Transference", cat: "Toponyms"},
+        {orig: "Runestone", trans: "Рунный Камень", type: "Calque", cat: "Toponyms"},
+        {orig: "Stepstones", trans: "Ступени", type: "Modulation", cat: "Toponyms"},
+        {orig: "Storm's End", trans: "Штормовой Предел", type: "Calque", cat: "Toponyms"},
+        {orig: "Dragonstone", trans: "Драконий Камень", type: "Calque", cat: "Toponyms"},
+        {orig: "King's Landing", trans: "Королевская Гавань", type: "Modulation", cat: "Toponyms"},
+        {orig: "Pyke", trans: "Пайк", type: "Transcription", cat: "Toponyms"},
+        {orig: "Highgarden", trans: "Хайгарден", type: "Transcription", cat: "Toponyms"},
+        {orig: "Oldtown", trans: "Старомест", type: "Modulation", cat: "Toponyms"},
+        {orig: "Sunspear", trans: "Солнечное Копьё", type: "Calque", cat: "Toponyms"},
+        {orig: "Lannisport", trans: "Ланниспорт", type: "Transliteration", cat: "Toponyms"},
+        {orig: "Sunset Sea", trans: "Закатное Море", type: "Calque", cat: "Toponyms"},
+        {orig: "Summer Sea", trans: "Летнее Море", type: "Calque", cat: "Toponyms"},
+        {orig: "Narrow Sea", trans: "Узкое Море", type: "Calque", cat: "Toponyms"},
+        {orig: "Shivering Sea", trans: "Студёное Море", type: "Calque", cat: "Toponyms"},
+        {orig: "Vermithor", trans: "Вермитор", type: "Transliteration", cat: "Anthroponyms"},
+        {orig: "Vhagar", trans: "Вхагар", type: "Transliteration", cat: "Anthroponyms"},
+        {orig: "Balerion", trans: "Балерион", type: "Transliteration", cat: "Anthroponyms"},
+        {orig: "Caraxes", trans: "Караксес", type: "Transference", cat: "Anthroponyms"},
+        {orig: "Moondancer", trans: "Лунная Плясунья", type: "Calque", cat: "Anthroponyms"},
+        {orig: "Sunfyre", trans: "Солнечный Пожар", type: "Calque", cat: "Anthroponyms"},
+        {orig: "Meleys", trans: "Мелейс", type: "Transcription", cat: "Anthroponyms"},
+        {orig: "Syrax", trans: "Сиракс", type: "Transcription", cat: "Anthroponyms"},
+        {orig: "Seasmoke", trans: "Морской Туман", type: "Calque", cat: "Anthroponyms"},
+        {orig: "Hand of the King", trans: "Десница короля", type: "Modulation", cat: "Titles"},
+        {orig: "Andals", trans: "Андалы", type: "Transliteration", cat: "Ethnonyms"},
+        {orig: "First Men", trans: "Первые люди", type: "Calque", cat: "Ethnonyms"},
+        {orig: "Rhoynars", trans: "Ройнары", type: "Transcription", cat: "Ethnonyms"}
+    ];
+
+    const dict = {
+        "Transcription": "Транскрипция",
+        "Transliteration": "Транслитерация",
+        "Transference": "Трансференция",
+        "Calque": "Калькирование",
+        "Modulation": "Модуляция",
+        "HalfCalque": "Полукалькирование",
+        "Anthroponyms": "Антропоним",
+        "Toponyms": "Топоним",
+        "Ethnonyms": "Этноним",
+        "Titles": "Титул"
+    };
+
+    // Фонетический словарь ТОЛЬКО для проблемных имён
+    const phoneticDict = {
+        // Фамилии
+        "targaryen": "targairien",
+        "velaryon": "velairion",
+        // Личные имена и драконы (те, что коверкаются)
+        "rhaenyra": "raynira",
+        "viserys": "viziris",
+        "vhagar": "vhagar",
+        "syrax": "siraks",
+        "amos": "amos",
+        "cregan": "kreegan",
+        "larys": "laris",
+        "arryk": "arik",
+        "cargyll": "kargil",
+        "meleys": "meleis",
+        "visenya": "visenya",
+        "vermithor": "vermithor",
+        "aemond": "aymond",
+        "aegon": "aygon",
+        "helaena": "helayna",
+        "jacaerys": "jakairis",
+        "lucerys": "luseris",
+        "baela": "bayla",
+        "rhaenys": "raynis",
+        "vaemond": "vaymond",
+        "daemon": "daymon",
+        "alicent": "alisent",
+        "balerion": "baleerion",
+        "caraxes": "karaksees",
+        "moondancer": "moondanser",
+        "sunfyre": "sunfyre",
+        "seasmoke": "seesmoke",
+        "sheepstealer": "sheepsteeler"
+    };
+
+    let currentMode = 'transformation'; 
+    let score = 0;
+    let total = 0;
+    let currentItem = null;
+    let questionDeck = [];
+    let preferredVoice = null;
+
+    function initDeck() {
+        questionDeck = Array.from({length: database.length}, (_, i) => i);
+        for (let i = questionDeck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [questionDeck[i], questionDeck[j]] = [questionDeck[j], questionDeck[i]];
+        }
+    }
+
+    // Выбор лучшего голоса (без изменений)
+    function selectBestVoice() {
+        if (!('speechSynthesis' in window)) return null;
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length === 0) return null;
+
+        const priorityList = [
+            v => (v.name.includes('Microsoft') && v.name.includes('Natural') && v.lang.startsWith('en')),
+            v => (v.name.includes('Google') && v.name.includes('Wavenet') && v.lang.startsWith('en')),
+            v => (v.name.includes('Google UK') && v.lang.startsWith('en')),
+            v => (v.name.includes('Google US') && v.lang.startsWith('en')),
+            v => (v.name === 'Samantha' || v.name === 'Daniel' || v.name === 'Alex'),
+            v => (v.name.includes('Microsoft') && (v.name.includes('David') || v.name.includes('Mark') || v.name.includes('Zira'))),
+            v => v.lang.startsWith('en')
+        ];
+
+        for (let condition of priorityList) {
+            const found = voices.find(condition);
+            if (found) return found;
+        }
+        return voices.find(v => v.lang.startsWith('en')) || voices[0];
+    }
+
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = function() {
+            preferredVoice = selectBestVoice();
+        };
+        setTimeout(() => {
+            if (!preferredVoice) {
+                preferredVoice = selectBestVoice();
+            }
+        }, 100);
+    }
+
+    // Функция озвучки с минимальными заменами
+    function speak(text) {
+        if (!('speechSynthesis' in window)) {
+            alert('Ваш браузер не поддерживает синтез речи.');
+            return;
+        }
+
+        window.speechSynthesis.cancel();
+
+        // Заменяем " I " на " the First "
+        let processedText = text.replace(/\bI\b/g, ' the First ');
+
+        // Разбиваем на слова, заменяем по словарю (регистронезависимо)
+        const words = processedText.split(' ');
+        const phoneticWords = words.map(word => {
+            const clean = word.replace(/[,\/#!$%\^&\*;:{}=\-_`~()]/g, '').toLowerCase();
+            if (phoneticDict[clean]) {
+                return phoneticDict[clean];
+            }
+            return word;
+        });
+
+        const utteranceText = phoneticWords.join(' ');
+
+        const utterance = new SpeechSynthesisUtterance(utteranceText);
+        utterance.lang = 'en-US';
+        
+        if (preferredVoice) {
+            utterance.voice = preferredVoice;
+        } else {
+            preferredVoice = selectBestVoice();
+            if (preferredVoice) {
+                utterance.voice = preferredVoice;
+            }
+        }
+
+        utterance.rate = 0.85;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+
+        utterance.onerror = (event) => console.error('Ошибка озвучки:', event.error);
+
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function setMode(mode) {
+        currentMode = mode;
+        document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        const label = document.getElementById('task-label');
+        if (mode === 'transformation') {
+            label.textContent = "Определите трансформацию";
+        } else {
+            label.textContent = "Определите тип имени собственного";
+        }
+        
+        nextQuestion();
+    }
+
+    function nextQuestion() {
+        document.getElementById('next-btn').style.display = "none";
+        document.getElementById('feedback').textContent = "";
+        
+        if (questionDeck.length === 0) {
+            initDeck();
+        }
+        
+        const index = questionDeck.pop();
+        currentItem = database[index];
+        
+        const originalDiv = document.getElementById('original');
+        originalDiv.innerHTML = `<span>${currentItem.orig}</span><button class="speak-btn" id="speak-btn">🔊</button>`;
+        
+        document.getElementById('speak-btn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            speak(currentItem.orig);
+        });
+        
+        document.getElementById('translation').textContent = currentItem.trans;
+        
+        renderOptions();
+    }
+
+    function renderOptions() {
+        const container = document.getElementById('options');
+        container.innerHTML = "";
+        let options = [];
+
+        if (currentMode === 'transformation') {
+            const correct = currentItem.type;
+            const groupTTT = ["Transcription", "Transliteration", "Transference"];
+            const groupMC = ["Calque", "Modulation"];
+            
+            if (groupTTT.includes(correct)) {
+                options = ["Transcription", "Transliteration", "Transference"];
+                const fillers = ["Calque", "Modulation", "HalfCalque"];
+                options.push(fillers[Math.floor(Math.random() * fillers.length)]);
+            } 
+            else if (groupMC.includes(correct)) {
+                options = ["Calque", "Modulation", "HalfCalque"];
+                options.push(groupTTT[Math.floor(Math.random() * groupTTT.length)]);
+            } 
+            else {
+                options = [correct];
+                const allTypes = ["Transcription", "Transliteration", "Transference", "Calque", "Modulation", "HalfCalque"];
+                while (options.length < 4) {
+                    const r = allTypes[Math.floor(Math.random() * allTypes.length)];
+                    if (!options.includes(r)) options.push(r);
+                }
+            }
+        } else {
+            const correct = currentItem.cat;
+            options = [correct];
+            const allCats = ["Anthroponyms", "Toponyms", "Ethnonyms", "Titles"];
+            
+            while (options.length < 4) {
+                const r = allCats[Math.floor(Math.random() * allCats.length)];
+                if (!options.includes(r)) options.push(r);
+            }
+        }
+
+        options.sort(() => Math.random() - 0.5);
+
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = dict[opt] || opt;
+            btn.onclick = () => checkAnswer(opt, btn);
+            container.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(selected, btn) {
+        document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+        
+        total++;
+        let isCorrect = false;
+        let correctVal = "";
+
+        if (currentMode === 'transformation') {
+            isCorrect = (selected === currentItem.type);
+            correctVal = dict[currentItem.type];
+        } else {
+            isCorrect = (selected === currentItem.cat);
+            correctVal = dict[currentItem.cat] || currentItem.cat;
+        }
+
+        const feedback = document.getElementById('feedback');
+
+        if (isCorrect) {
+            score++;
+            btn.classList.add('correct');
+            feedback.textContent = "Дракарис! Верный ответ.";
+            feedback.style.color = "#4caf50";
+        } else {
+            btn.classList.add('wrong');
+            feedback.textContent = `Ошибка. Верно: ${correctVal}`;
+            feedback.style.color = "#ff5252";
+            
+            document.querySelectorAll('.option-btn').forEach(b => {
+                if (b.textContent === correctVal) b.classList.add('correct');
+            });
+        }
+
+        document.getElementById('score').textContent = `Счет: ${score}`;
+        document.getElementById('total').textContent = `Всего: ${total}`;
+        document.getElementById('next-btn').style.display = "block";
+    }
+
+    initDeck();
+    nextQuestion();
+</script>
+</body>
+</html>
