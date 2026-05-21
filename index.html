@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HOTD: High Valyrian Translator</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <title>HOTD: Translation Trainer & Archives</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    
     <style>
-        /* Стили без изменений (см. предыдущие версии) */
+        /* === ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ === */
         :root {
+            /* Переменные Тренажера */
             --bg-color: #050505;
             --card-bg: #121212;
             --blood-red: #660000;
@@ -16,17 +18,28 @@
             --gold-dark: #7a5e25;
             --text: #e0e0e0;
             --scale-color: #1a0505;
+
+            /* Переменные Архивов */
+            --paper-bg: #fff5e6; 
+            --ink-color: #1a0f00;
+            --accent-red: #c90000;
+            --accent-gold: #ffb700;
+            --hover-bg: rgba(201, 0, 0, 0.1);
         }
 
+        /* === ГЛОБАЛЬНЫЕ СТИЛИ И ФОНЫ === */
         body {
-            font-family: 'Lato', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text);
             margin: 0;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            transition: background 0.4s ease;
+        }
+
+        /* Тема Тренажера */
+        body.trainer-theme {
+            background-color: var(--bg-color);
             background-image: 
                 radial-gradient(circle at 100% 150%, var(--scale-color) 24%, rgba(0,0,0,0) 25%),
                 radial-gradient(circle at 0% 150%, var(--scale-color) 24%, rgba(0,0,0,0) 25%),
@@ -37,6 +50,64 @@
             background-size: 60px 60px;
         }
 
+        /* Тема Архивов */
+        body.archives-theme {
+            background-color: #111;
+            background-image: url('https://www.transparenttextures.com/patterns/wood-pattern.png');
+        }
+
+        /* === КНОПКА ПЕРЕКЛЮЧЕНИЯ === */
+        #global-toggle-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            background: #121212;
+            border: 2px solid var(--gold-dark);
+            color: var(--gold);
+            padding: 12px 24px;
+            font-family: 'Cinzel', serif;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #global-toggle-btn:hover {
+            background: var(--blood-red);
+            color: #fff;
+            border-color: var(--gold);
+            box-shadow: 0 0 20px rgba(204, 0, 0, 0.6);
+            transform: translateY(-2px);
+        }
+
+        /* === КОНТЕЙНЕРЫ ВИДОВ === */
+        #trainer-view {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Lato', sans-serif;
+            color: var(--text);
+        }
+
+        #archives-view {
+            width: 100%;
+            display: none; /* Скрыто по умолчанию */
+            justify-content: center;
+            align-items: center;
+            font-family: 'Cormorant Garamond', serif;
+            color: var(--ink-color);
+            padding: 40px;
+        }
+
+        /* ========================================= */
+        /* === СТИЛИ ТРЕНАЖЕРА (БЕЗ ИЗМЕНЕНИЙ) === */
+        /* ========================================= */
         .container {
             width: 95%;
             max-width: 800px;
@@ -58,11 +129,9 @@
             transition: transform 0.5s ease;
         }
         
-        .container:hover .dragon-sigil {
-            transform: scale(1.05);
-        }
+        .container:hover .dragon-sigil { transform: scale(1.05); }
 
-        h1 {
+        .trainer-title {
             font-family: 'Cinzel', serif;
             color: var(--gold);
             font-size: 2.5rem;
@@ -216,9 +285,7 @@
             display: none;
         }
 
-        #next-btn:hover {
-            filter: brightness(1.2);
-        }
+        #next-btn:hover { filter: brightness(1.2); }
 
         .speak-btn {
             background: none;
@@ -235,41 +302,285 @@
             transform: scale(1.2);
             color: var(--fire-red);
         }
+
+        /* Экран завершения */
+        #completion-screen {
+            display: none;
+            background: var(--card-bg);
+            border: 1px solid var(--gold-dark);
+            padding: 3rem 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        
+        #completion-screen h2 {
+            font-family: 'Cinzel', serif;
+            color: var(--gold);
+            font-size: 2.2rem;
+            margin-top: 0;
+            text-transform: uppercase;
+        }
+
+        #completion-screen p {
+            font-size: 1.2rem;
+            color: var(--text);
+            margin-bottom: 2rem;
+        }
+
+        /* ========================================= */
+        /* === СТИЛИ АРХИВОВ (БЕЗ ИЗМЕНЕНИЙ) === */
+        /* ========================================= */
+        .book-container {
+            display: flex;
+            width: min(1000px, 95vw);
+            height: min(700px, 90vh);
+            background-color: var(--paper-bg);
+            box-shadow: 
+                0 0 20px rgba(0,0,0,0.9), 
+                0 0 40px rgba(255, 183, 0, 0.1),
+                inset 0 0 120px rgba(166, 116, 50, 0.3);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #5c4018;
+        }
+
+        .book-spine {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 50px;
+            background: linear-gradient(90deg, 
+                rgba(0,0,0,0.2), 
+                rgba(0,0,0,0.05) 20%, 
+                rgba(0,0,0,0.05) 80%, 
+                rgba(0,0,0,0.2));
+            transform: translateX(-50%);
+            z-index: 10;
+            border-left: 1px solid rgba(0,0,0,0.1);
+            border-right: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .page {
+            flex: 1;
+            padding: 50px;
+            overflow-y: auto;
+        }
+
+        .left-page {
+            border-right: 1px solid rgba(0,0,0,0.15);
+            padding-right: 70px;
+        }
+
+        .right-page {
+            padding-left: 70px;
+        }
+
+        .archives-title, .archives-subtitle {
+            font-family: 'Cinzel', serif;
+            text-align: center;
+            color: var(--accent-red);
+            border-bottom: 3px solid var(--accent-gold);
+            padding-bottom: 15px;
+            margin-top: 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.1);
+        }
+
+        .list-item {
+            cursor: pointer;
+            padding: 18px;
+            border-bottom: 1px solid rgba(184, 134, 11, 0.3);
+            transition: all 0.3s;
+            font-size: 1.3rem;
+            font-weight: 600;
+            position: relative;
+        }
+
+        .list-item:hover {
+            background-color: var(--hover-bg);
+            padding-left: 28px;
+            color: var(--accent-red);
+        }
+
+        .list-item.active {
+            font-weight: bold;
+            color: #fff;
+            background-color: var(--accent-red);
+            border-left: 5px solid var(--accent-gold);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .detail-card {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .detail-card.visible {
+            display: block;
+        }
+
+        .prototype-label {
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            text-transform: uppercase;
+            color: var(--accent-red);
+            margin-top: 25px;
+            margin-bottom: 5px;
+            display: inline-block;
+            font-weight: bold;
+            border-bottom: 1px solid var(--accent-gold);
+        }
+
+        .translation-box {
+            background: #fff;
+            padding: 20px;
+            border: 2px solid var(--accent-gold);
+            margin: 10px 0;
+            font-style: italic;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.05);
+            font-size: 1.1rem;
+        }
+
+        .history-box {
+            background: rgba(0,0,0,0.03);
+            border: 2px solid var(--ink-color);
+            padding: 20px;
+            margin-top: 25px;
+            position: relative;
+        }
+
+        .history-box::before {
+            content: "ИСТОРИЧЕСКИЙ ПРОТОТИП";
+            position: absolute;
+            top: -14px;
+            left: 15px;
+            background: var(--accent-red);
+            color: #fff;
+            padding: 2px 12px;
+            font-family: 'Cinzel', serif;
+            font-weight: bold;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+
+        .history-box p:first-of-type::first-letter {
+            float: left;
+            font-family: 'Cinzel', serif;
+            font-size: 3.5rem;
+            line-height: 0.8;
+            padding-right: 10px;
+            padding-top: 5px;
+            color: var(--accent-red);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        .page::-webkit-scrollbar { width: 6px; }
+        .page::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+        .page::-webkit-scrollbar-thumb { background: var(--accent-red); border-radius: 3px; }
     </style>
 </head>
-<body>
+<body class="trainer-theme">
 
-<div class="container">
-    <svg class="dragon-sigil" viewBox="0 0 512 512">
-        <path d="M136.8 56.4C118.4 51.5 101.4 43.1 87.2 30.2 73 43.1 56 51.5 37.6 56.4c-17.7 4.7-37.2 6.4-56.1 2.3 12.3 22.1 31.5 39.1 54.4 47.9 22.9 8.8 48.6 8.8 71.5 0 22.9-8.8 42.1-25.8 54.4-47.9-18.9 4.1-38.4 2.4-56.1-2.3zM368 32c-29.5 0-56.2 12-75.3 31.2C273.6 82.3 261.6 109 261.6 138.5c0 29.5 12 56.2 31.2 75.3 19.1 19.1 45.8 31.2 75.3 31.2s56.2-12 75.3-31.2c19.1-19.1 31.2-45.8 31.2-75.3 0-29.5-12-56.2-31.2-75.3C424.2 44 397.5 32 368 32zM427.2 277.6c-21.8-13.4-46.6-20.5-72.2-20.5-38 0-73.4 15.6-98.8 41-1.6 1.6-3.1 3.2-4.6 4.9-20.1-40.3-61.7-67.5-108.6-67.5-67.1 0-121.5 54.4-121.5 121.5 121.5 0 67.1 54.4 121.5 121.5 121.5 50.1 0 93.9-31.1 112.9-75.8 1.9 2.2 3.9 4.3 5.9 6.3 25.4 25.4 60.8 41 98.8 41 25.6 0 50.4-7.1 72.2-20.5 41.7-25.7 67.3-71 67.3-120.3S468.9 303.3 427.2 277.6z"/>
-    </svg>
+    <button id="global-toggle-btn" onclick="toggleViews()">📚 Открыть Архивы Цитадели</button>
 
-    <h1>House of the Dragon<br><span style="font-size: 1.2rem; color: var(--gold-dark)">Translation Trainer</span></h1>
+    <div id="trainer-view">
+        <div class="container">
+            <svg class="dragon-sigil" viewBox="0 0 512 512">
+                <path d="M136.8 56.4C118.4 51.5 101.4 43.1 87.2 30.2 73 43.1 56 51.5 37.6 56.4c-17.7 4.7-37.2 6.4-56.1 2.3 12.3 22.1 31.5 39.1 54.4 47.9 22.9 8.8 48.6 8.8 71.5 0 22.9-8.8 42.1-25.8 54.4-47.9-18.9 4.1-38.4 2.4-56.1-2.3zM368 32c-29.5 0-56.2 12-75.3 31.2C273.6 82.3 261.6 109 261.6 138.5c0 29.5 12 56.2 31.2 75.3 19.1 19.1 45.8 31.2 75.3 31.2s56.2-12 75.3-31.2c19.1-19.1 31.2-45.8 31.2-75.3 0-29.5-12-56.2-31.2-75.3C424.2 44 397.5 32 368 32zM427.2 277.6c-21.8-13.4-46.6-20.5-72.2-20.5-38 0-73.4 15.6-98.8 41-1.6 1.6-3.1 3.2-4.6 4.9-20.1-40.3-61.7-67.5-108.6-67.5-67.1 0-121.5 54.4-121.5 121.5 121.5 0 67.1 54.4 121.5 121.5 121.5 50.1 0 93.9-31.1 112.9-75.8 1.9 2.2 3.9 4.3 5.9 6.3 25.4 25.4 60.8 41 98.8 41 25.6 0 50.4-7.1 72.2-20.5 41.7-25.7 67.3-71 67.3-120.3S468.9 303.3 427.2 277.6z"/>
+            </svg>
 
-    <div class="mode-switch">
-        <button class="mode-btn active" onclick="setMode('transformation')">Способ перевода</button>
-        <button class="mode-btn" onclick="setMode('category')">Тип имени</button>
+            <h1 class="trainer-title">House of the Dragon<br><span style="font-size: 1.2rem; color: var(--gold-dark)">Translation Trainer</span></h1>
+
+            <div class="mode-switch">
+                <button class="mode-btn active" onclick="setMode('transformation', event)">Способ перевода</button>
+                <button class="mode-btn" onclick="setMode('category', event)">Тип имени</button>
+            </div>
+
+            <div class="stats">
+                <span id="score">Счет: 0</span>
+                <span id="total">Всего: 0</span>
+            </div>
+
+            <div id="game-card" class="card">
+                <span id="task-label" class="task-label">Определите трансформацию</span>
+                <div id="original" class="original-word">...</div>
+                <div id="translation" class="translation-word">...</div>
+                <div id="feedback" class="feedback"></div>
+            </div>
+            <div id="options" class="options-grid"></div>
+            <button id="next-btn" onclick="nextQuestion()">Следующий вопрос</button>
+
+            <div id="completion-screen">
+                <h2>Тренировка завершена!</h2>
+                <p>Вы прошли всю базу данных имён и топонимов Вестероса.</p>
+                <div style="font-family: 'Cinzel', serif; color: var(--fire-red); font-size: 1.5rem; margin-bottom: 2rem;">
+                    Ваш результат: <span id="final-score">0</span> из <span id="final-total">0</span>
+                </div>
+                <button class="mode-btn active" onclick="restartTrainer()" style="font-size: 1.2rem; padding: 15px 30px;">Начать заново</button>
+            </div>
+
+        </div>
     </div>
 
-    <div class="stats">
-        <span id="score">Счет: 0</span>
-        <span id="total">Всего: 0</span>
+    <div id="archives-view">
+        <div class="book-container">
+            <div class="book-spine"></div>
+            
+            <div class="page left-page">
+                <h1 class="archives-title">Архивы Вестероса</h1>
+                <p style="text-align: center; font-style: italic;">Выберите запись для изучения:</p>
+                <div id="items-list"></div>
+            </div>
+
+            <div class="page right-page">
+                <div id="details-container">
+                    <h2 class="archives-subtitle" style="color: var(--ink-color); opacity: 0.5; margin-top: 100px; border-bottom: none;">
+                        Выберите запись слева,<br>чтобы открыть досье
+                    </h2>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <div class="card">
-        <span id="task-label" class="task-label">Определите трансформацию</span>
-        <div id="original" class="original-word">...</div>
-        <div id="translation" class="translation-word">...</div>
-        <div id="feedback" class="feedback"></div>
-    </div>
-
-    <div id="options" class="options-grid"></div>
-
-    <button id="next-btn" onclick="nextQuestion()">Следующий вопрос</button>
-</div>
 
 <script>
-    // База данных (60 элементов, все уникальны)
+    // =========================================
+    // === ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ЭКРАНОВ ===
+    // =========================================
+    let isTrainerActive = true;
+
+    function toggleViews() {
+        const trainerView = document.getElementById('trainer-view');
+        const archivesView = document.getElementById('archives-view');
+        const toggleBtn = document.getElementById('global-toggle-btn');
+        
+        if (isTrainerActive) {
+            // Переход в Архивы
+            trainerView.style.display = 'none';
+            archivesView.style.display = 'flex';
+            document.body.className = 'archives-theme';
+            toggleBtn.innerHTML = '⚔️ Вернуться к Тренажеру';
+            isTrainerActive = false;
+        } else {
+            // Переход в Тренажер
+            archivesView.style.display = 'none';
+            trainerView.style.display = 'flex';
+            document.body.className = 'trainer-theme';
+            toggleBtn.innerHTML = '📚 Открыть Архивы Цитадели';
+            isTrainerActive = true;
+        }
+    }
+
+
+    // =========================================
+    // === СКРИПТЫ ТРЕНАЖЕРА ===
+    // =========================================
     const database = [
         {orig: "Alys Rivers", trans: "Алис Риверс", type: "Transliteration", cat: "Anthroponyms"},
         {orig: "Alicent Hightower", trans: "Алисента Хайтауэр", type: "Transference", cat: "Anthroponyms"},
@@ -346,12 +657,9 @@
         "Titles": "Титул"
     };
 
-    // Фонетический словарь ТОЛЬКО для проблемных имён
     const phoneticDict = {
-        // Фамилии
         "targaryen": "targairien",
         "velaryon": "velairion",
-        // Личные имена и драконы (те, что коверкаются)
         "rhaenyra": "raynira",
         "viserys": "viziris",
         "vhagar": "vhagar",
@@ -397,7 +705,6 @@
         }
     }
 
-    // Выбор лучшего голоса (без изменений)
     function selectBestVoice() {
         if (!('speechSynthesis' in window)) return null;
         const voices = window.speechSynthesis.getVoices();
@@ -417,7 +724,7 @@
             const found = voices.find(condition);
             if (found) return found;
         }
-        return voices.find(v => v.lang.startsWith('en')) || voices[0];
+        return voices[0];
     }
 
     if ('speechSynthesis' in window) {
@@ -431,7 +738,6 @@
         }, 100);
     }
 
-    // Функция озвучки с минимальными заменами
     function speak(text) {
         if (!('speechSynthesis' in window)) {
             alert('Ваш браузер не поддерживает синтез речи.');
@@ -439,11 +745,12 @@
         }
 
         window.speechSynthesis.cancel();
+        let processedText = text
+            .replace(/\bIV\b/g, ' the Fourth ')
+            .replace(/\bIII\b/g, ' the Third ')
+            .replace(/\bII\b/g, ' the Second ')
+            .replace(/\bI\b/g, ' the First ');
 
-        // Заменяем " I " на " the First "
-        let processedText = text.replace(/\bI\b/g, ' the First ');
-
-        // Разбиваем на слова, заменяем по словарю (регистронезависимо)
         const words = processedText.split(' ');
         const phoneticWords = words.map(word => {
             const clean = word.replace(/[,\/#!$%\^&\*;:{}=\-_`~()]/g, '').toLowerCase();
@@ -454,7 +761,6 @@
         });
 
         const utteranceText = phoneticWords.join(' ');
-
         const utterance = new SpeechSynthesisUtterance(utteranceText);
         utterance.lang = 'en-US';
         
@@ -470,16 +776,14 @@
         utterance.rate = 0.85;
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
-
         utterance.onerror = (event) => console.error('Ошибка озвучки:', event.error);
-
         window.speechSynthesis.speak(utterance);
     }
 
-    function setMode(mode) {
+    function setMode(mode, event) {
         currentMode = mode;
         document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-        event.target.classList.add('active');
+        if(event) event.target.classList.add('active');
         
         const label = document.getElementById('task-label');
         if (mode === 'transformation') {
@@ -488,6 +792,36 @@
             label.textContent = "Определите тип имени собственного";
         }
         
+        // Сбрасываем игру при переключении режима
+        restartTrainer();
+    }
+
+    function showCompletionScreen() {
+        document.getElementById('game-card').style.display = 'none';
+        document.getElementById('options').style.display = 'none';
+        document.querySelector('.mode-switch').style.display = 'none';
+        document.querySelector('.stats').style.display = 'none';
+        
+        document.getElementById('final-score').textContent = score;
+        document.getElementById('final-total').textContent = total;
+        
+        document.getElementById('completion-screen').style.display = 'block';
+    }
+
+    function restartTrainer() {
+        score = 0;
+        total = 0;
+        document.getElementById('score').textContent = `Счет: ${score}`;
+        document.getElementById('total').textContent = `Всего: ${total}`;
+        
+        initDeck();
+        
+        document.getElementById('completion-screen').style.display = 'none';
+        document.getElementById('game-card').style.display = 'block';
+        document.getElementById('options').style.display = 'grid';
+        document.querySelector('.mode-switch').style.display = 'flex';
+        document.querySelector('.stats').style.display = 'flex';
+        
         nextQuestion();
     }
 
@@ -495,8 +829,10 @@
         document.getElementById('next-btn').style.display = "none";
         document.getElementById('feedback').textContent = "";
         
+        // Проверка на завершение всех слов
         if (questionDeck.length === 0) {
-            initDeck();
+            showCompletionScreen();
+            return;
         }
         
         const index = questionDeck.pop();
@@ -511,7 +847,6 @@
         });
         
         document.getElementById('translation').textContent = currentItem.trans;
-        
         renderOptions();
     }
 
@@ -601,8 +936,116 @@
         document.getElementById('next-btn').style.display = "block";
     }
 
+    // Инициализация Тренажера
     initDeck();
     nextQuestion();
+
+
+    // =========================================
+    // === СКРИПТЫ АРХИВОВ ===
+    // =========================================
+    const archivesDb = [
+        {
+            id: 1,
+            nameEn: "Rhaenyra Targaryen",
+            nameRu: "Рейнира Таргариен",
+            method: "Трансференция / Транслитерация",
+            prototype: "Императрица Матильда (Англия, XII век)",
+            desc: "Главная героиня «Танца Драконов», чьи права на трон были узурпированы.",
+            history: "Исторический прототип — Матильда, дочь Генриха I. Король заставил баронов присягнуть ей, но после его смерти трон захватил её кузен Стефан. Началась гражданская война «Анархия».",
+            analysis: "Применена стратегия трансференции. Фамилия Targaryen передана методом транслитерации (сохранение графического образа: T-Т, g-г, y-и), что подчеркивает древность и чужеродность рода валирийцев."
+        },
+        {
+            id: 2,
+            nameEn: "Aegon II Targaryen",
+            nameRu: "Эйгон II Таргариен",
+            method: "Трансференция",
+            prototype: "Стефан Блуаский",
+            desc: "Сводный брат Рейниры, узурпировавший трон.",
+            history: "Стефан Блуаский воспользовался отсутствием Матильды и быстро короновался, опираясь на поддержку церкви и части знати, утверждавшей, что женщина не может править.",
+            analysis: "Смешанный тип перевода (трансференция). Имя Aegon фонетически отсылает к The Conqueror (Завоеватель), а фамилия транслитерирована, сохраняя визуальную связь с династией."
+        },
+        {
+            id: 3,
+            nameEn: "Stark & Lannister",
+            nameRu: "Старки и Ланнистеры",
+            method: "Транслитерация (с элементами транскрипции)",
+            prototype: "Йорки и Ланкастеры (Война Алой и Белой розы)",
+            desc: "Два великих дома, противостояние которых легло в основу сюжета.",
+            history: "Война Алой и Белой розы (1455–1485) — конфликт между Ланкастерами (Ланнистеры) и Йорками (Старки). Мартин сохранил даже фонетическое сходство фамилий.",
+            analysis: "Фамилия Lannister — это портманто от Lancaster и sinister (зловещий). Переводчик использует транслитерацию корня, чтобы сохранить аллюзию на исторический прототип."
+        },
+        {
+            id: 4,
+            nameEn: "The Wall",
+            nameRu: "Стена",
+            method: "Калькирование",
+            prototype: "Вал Адриана (Hadrian's Wall)",
+            desc: "Гигантское укрепление на севере.",
+            history: "Римский император Адриан построил вал поперек Британии для защиты от пиктов (прототип Одичалых). Для римлян это был 'край цивилизации'.",
+            analysis: "Перевод 'Стена' (а не 'Вал' или 'Укрепление') точно передает монументальную простоту оригинала. Это пример того, как простейшее слово становится именем собственным благодаря контексту."
+        },
+        {
+            id: 5,
+            nameEn: "Valyria",
+            nameRu: "Валирия",
+            method: "Транскрипция",
+            prototype: "Римская Империя / Помпеи",
+            desc: "Древняя погибшая цивилизация, родина Таргариенов.",
+            history: "Рок Валирии — это аллюзия на извержение Везувия, уничтожившее Помпеи, и падение Рима, после которого наступили Темные века.",
+            analysis: "Названия, связанные с Валирией, передаются транскрипцией (Valyria), чтобы передать фонетику 'латыни' этого мира — языка высокой культуры и науки."
+        },
+        {
+            id: 6,
+            nameEn: "Red Wedding",
+            nameRu: "Красная Свадьба",
+            method: "Калькирование",
+            prototype: "Черный ужин (Black Dinner, 1440 г.)",
+            desc: "Резня, нарушившая законы гостеприимства.",
+            history: "Шотландский клан Дугласов был приглашен на пир к королю, где им подали голову черного быка — знак смерти. Мартин объединил это с Резней в Гленко.",
+            analysis: "Термин 'Красная Свадьба' стал идиомой. Перевод требует точного калькирования (Red -> Красная), чтобы сохранить цветовую символику крови и огня, характерную для саги."
+        }
+    ];
+
+    const archListContainer = document.getElementById('items-list');
+    const archDetailsContainer = document.getElementById('details-container');
+
+    archListContainer.innerHTML = '';
+    archivesDb.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'list-item';
+        el.textContent = item.nameEn; 
+        el.onclick = () => showArchDetails(item, el);
+        archListContainer.appendChild(el);
+    });
+
+    function showArchDetails(item, element) {
+        document.querySelectorAll('.list-item').forEach(i => i.classList.remove('active'));
+        element.classList.add('active');
+
+        archDetailsContainer.innerHTML = `
+            <div class="detail-card visible">
+                <h2 class="archives-title">${item.nameRu}</h2>
+                <div style="text-align: center; color: var(--accent-gold); margin-bottom: 20px;">
+                    ${item.nameEn}
+                </div>
+                
+                <span class="prototype-label">Стратегия перевода:</span>
+                <div class="translation-box">
+                    <strong>${item.method}</strong><br>
+                    ${item.analysis}
+                </div>
+
+                <span class="prototype-label">Исторический прототип:</span>
+                <div class="history-box">
+                    <strong>${item.prototype}</strong>
+                    <p>${item.history}</p>
+                    <p><em>${item.desc}</em></p>
+                </div>
+            </div>
+        `;
+    }
 </script>
+
 </body>
 </html>
